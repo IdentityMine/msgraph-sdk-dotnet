@@ -19,10 +19,9 @@ namespace Microsoft.Graph
     **/
     public class PageIterator<T> where T : Entity
     {
-        private GraphServiceClient Client { get; set; }
-        private ICollectionPage<T> CurrentPage { get; set; } // Could we make this dynamic to access NextPageRequest?
-        //private dynamic CurrentPage { get; set; }
-        private Func<T, bool> ProcessPages { get; set; }
+        private ICollectionPage<T> CurrentPage { get; set; } 
+        private Queue<ICollectionPage<T>> PageQueue { get; set; }
+        private Func<T, bool> ProcessPageItem { get; set; }
 
         // Can this be done in a cstor?
         // Can I pass in an IUserEventsCollectionPage which is an ICollectionPage<Event> and access nextPageRequest?
@@ -30,17 +29,16 @@ namespace Microsoft.Graph
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="client"></param>
         /// <param name="page"></param>
-        /// <param name="processPages">T: the type of object in the collection. bool: return condition when to stop iterating.</param>
+        /// <param name="processPageItems">T: the type of object in the collection. bool: return condition when to stop iterating.</param>
         /// <returns></returns>
-        public static PageIterator<T> CreatePageIterator(ICollectionPage<T> page, Func<T,bool> processPages)
+        public static PageIterator<T> CreatePageIterator(ICollectionPage<T> page, Func<T,bool> processPageItems)
         {
             return new PageIterator<T>()
             {
-                Client = client,
                 CurrentPage = page,
-                ProcessPages = processPages
+                ProcessPageItem = processPageItems,
+                PageQueue = new Queue<ICollectionPage<T>>()
             };
         }
 
@@ -51,59 +49,50 @@ namespace Microsoft.Graph
         /// <returns></returns>
         /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">Thrown when a base CollectionPage 
         /// is provided to the PageIterator</exception>
+        /// TODO: Handle prefetch
         public async Task IterateAsync(bool prefetchNextPage = false)
         {
-            dynamic nextPage; // contains the next page to be consumed by the iterator.
-
-            // Fetch the next page 
-            if (prefetchNextPage)
-            {
-                // We need make this dyanmic to access 
-                dynamic page = CurrentPage;
-
-                // TODO: check that the there is a nextLink and use the client
-                // to get the next page link. Ideally, if we have a GraphServiceClient,
-                // we can get use the NextPageRequest. 
-                if (page.NextPageRequest != null)
-                {
-                    nextPage = await page.NextPageRequest.GetAsync();
-                }
-
-                // TODO: Loop through each request, clone out results, and call the delegate.
-            }
-            
-            // Process the current ICollectionPage<T> with Func<T> and release reference.
-            foreach (T e in CurrentPage)
-            {
-                bool result = ProcessPages(e);
-
-                Debug.WriteLine($"Results: {result}");
-            }
-
             // Runtime determines the type of the ICollectionPage<T>. We need access to the NextPageRequest
             // to call and get the next page.
             dynamic page = CurrentPage;
-            
 
-            // Can expect a RuntimeBinderException here if someone uses a base CollectionPage object. It really should be abstract.
-            // TODO: make backlog issue to make CollectionPage abstract.
-            if (page.NextPageRequest != null)
+            bool morePages = true;
+
+            do
             {
-                nextPage = await page.NextPageRequest.GetAsync();
-            }
+                // What happens with heterogenous items in result?
+                // Process the current ICollectionPage<T> with Func<T> and release reference.
+                foreach (T item in page)
+                {
+                    bool shouldContinue = ProcessPageItem(item);
 
-            // Access nextLink and make next paged call.
-            object nextLink;
-            if (CurrentPage.AdditionalData.TryGetValue("@odata.nextLink", out nextLink))
-            {
-                // No reflection in standard 1.1.
-                //Type pageType = CurrentPage.GetType();
-                //pageType.GetProperty("NextPageRequest", typeof(IBaseRequest));
+                    if (!shouldContinue)
+                    {
+                        morePages = false;
+                        continue;
+                    }
 
+                    Debug.WriteLine($"Results: {shouldContinue}");
+                }
 
-                // If it does, process it with Func<T>
-                Debug.WriteLine($"Nextlink: {nextLink.ToString()}");
-            }
+                // Can expect a RuntimeBinderException here if someone uses a base CollectionPage object. It really should be abstract.
+                // TODO: make backlog issue to make CollectionPage abstract.
+                if (page.NextPageRequest != null && morePages)
+                {
+                    page = await page.NextPageRequest.GetAsync();
+                }
+                else
+                {
+                    morePages = false;
+                }
+                
+
+            } while (morePages);
+
+            // TODO: Investigate the use of the queue to queue up requests. 
+            // Would the queue run out if the requests take too long?
+            // Need to wrap the queue in something that indicates that it is no longer getting updated with CollectionPages.
+            Queue<ICollectionPage<T>> queue = new Queue<ICollectionPage<T>>(); 
         }
     }
 }

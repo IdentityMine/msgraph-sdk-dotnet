@@ -15,8 +15,16 @@ namespace Microsoft.Graph.DotnetCore.Test.Models
 {
     public class PageIteratorTests : GraphTestBase
     {
-        private PageIterator<Event> pageIterator;
+        /**
+         * Test:
+         * 1. heterogenous collections.
+         * 2. Iteration cancellation.
+         * 3. CollectionPage provided and RuntimeBinderException
+         * 4. Queue exhaustion before queue complete population.
+         **/
 
+        private PageIterator<Event> pageIterator;
+        
         [Fact]
         public async Task PageIteratorDevTest()
         {
@@ -26,10 +34,12 @@ namespace Microsoft.Graph.DotnetCore.Test.Models
             // Create the function to process each entity returned in the pages
             Func<Event,bool> processUser = (e) =>
             {
-                bool conditionToSatisfy = true;
+                bool shouldContinue = true;
 
+                if (e.Subject == "weekly sync")
+                    shouldContinue = false;
                 Debug.WriteLine($"Event subject: {e.Subject}");
-                return conditionToSatisfy;
+                return shouldContinue;
             }; 
 
             // This requires the dev to specify the generic type in the CollectionPage.
@@ -37,6 +47,5 @@ namespace Microsoft.Graph.DotnetCore.Test.Models
 
             await pageIterator.IterateAsync(false);
         }
-
     }
 }
