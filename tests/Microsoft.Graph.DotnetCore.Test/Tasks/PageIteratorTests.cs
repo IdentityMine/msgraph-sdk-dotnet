@@ -109,5 +109,7 @@ namespace Microsoft.Graph.DotnetCore.Test.Tasks
 
         // Given_Concrete_Generated_CollectionPage_It_Stops_Iterating_Across_Pages
         // Given_Concrete_Generated_CollectionPage_It_Iterates_Across_Pages
+        // Given_Concrete_Generated_CollectionPage_It_Returns_Deltalink
+        // Given_Concrete_Generated_CollectionPage_It_Handles_Empty_NextPage
     }
 }
