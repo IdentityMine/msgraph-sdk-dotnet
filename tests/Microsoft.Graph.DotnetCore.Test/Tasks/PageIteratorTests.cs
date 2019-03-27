@@ -47,6 +47,18 @@ namespace Microsoft.Graph.DotnetCore.Test.Tasks
         }
 
         [Fact]
+        public void Given_Null_CollectionPage_It_Throws_ArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => PageIterator<Event>.CreatePageIterator(null, (e) => { return true; }));
+        }
+
+        [Fact]
+        public void Given_Null_Delegate_It_Throws_ArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => PageIterator<Event>.CreatePageIterator(new CollectionPage<Event>(), null));
+        }
+
+        [Fact]
         public async Task Given_Concrete_Generated_CollectionPage_It_Iterates_Page_Items()
         {
             int inputEventCount = 17;
@@ -97,6 +109,5 @@ namespace Microsoft.Graph.DotnetCore.Test.Tasks
 
         // Given_Concrete_Generated_CollectionPage_It_Stops_Iterating_Across_Pages
         // Given_Concrete_Generated_CollectionPage_It_Iterates_Across_Pages
-        // Given_Concrete_Generated_Hetero_CollectionPage_It
     }
 }
