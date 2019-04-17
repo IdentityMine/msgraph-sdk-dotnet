@@ -51,6 +51,8 @@ March 2019 Release Summary (version 1.14.1)
     <DocumentationFile>bin\Debug\net45\Microsoft.Graph.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\NewtonsoftJson\Artifact\Newtonsoft.Json\netstandard2.0\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

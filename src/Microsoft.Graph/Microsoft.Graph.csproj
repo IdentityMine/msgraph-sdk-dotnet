@@ -55,9 +55,11 @@ Updated functionality
     <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <ProjectReference Include="..\Microsoft.Graph.Core\Microsoft.Graph.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Microsoft.Graph.Core\Microsoft.Graph.Core.csproj" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\NewtonsoftJson\Artifact\Newtonsoft.Json\netstandard2.0\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>
